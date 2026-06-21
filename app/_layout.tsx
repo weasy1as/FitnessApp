@@ -4,19 +4,21 @@ import { Stack } from 'expo-router';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { useAuthSession } from '../src/auth/useAuthSession';
+import { AuthProvider, useAuth } from '../src/auth/AuthContext';
 import { Screen } from '../src/components/Screen';
 
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <RootNavigator />
+      <AuthProvider>
+        <RootNavigator />
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }
 
 function RootNavigator() {
-  const { session, booting } = useAuthSession();
+  const { session, booting } = useAuth();
 
   if (booting) {
     return (
