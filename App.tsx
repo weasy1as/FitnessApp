@@ -1,20 +1,34 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import './global.css';
+
+import { ActivityIndicator, Text, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import { useAuthSession } from './src/auth/useAuthSession';
+import { Screen } from './src/components/Screen';
+import { AuthScreen } from './src/screens/AuthScreen';
+import { HomeScreen } from './src/screens/HomeScreen';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider>
+      <AppContent />
+    </SafeAreaProvider>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+function AppContent() {
+  const { session, booting } = useAuthSession();
+
+  if (booting) {
+    return (
+      <Screen>
+        <View className="flex-1 items-center justify-center gap-3">
+          <ActivityIndicator color="#0058bc" />
+          <Text className="text-[15px] text-on-surface-variant">Loading GymFlow...</Text>
+        </View>
+      </Screen>
+    );
+  }
+
+  return session ? <HomeScreen session={session} /> : <AuthScreen />;
+}
