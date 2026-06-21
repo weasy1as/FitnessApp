@@ -3,8 +3,8 @@ import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { useAuth } from '../auth/AuthContext';
+import { AppHeader } from '../components/AppHeader';
 import { AchievementCard } from '../components/home/AchievementCard';
-import { HomeHeader } from '../components/home/HomeHeader';
 import { LastWorkoutCard } from '../components/home/LastWorkoutCard';
 import { WeeklyProgressCard } from '../components/home/WeeklyProgressCard';
 import { Screen } from '../components/Screen';
@@ -20,7 +20,7 @@ export function HomeScreen() {
     <Screen edges={['top', 'right', 'left']}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View className="px-5 pb-10">
-          <HomeHeader />
+          <AppHeader />
 
           <View className="pb-8 pt-8">
             <Text className="mb-2 text-xs font-extrabold tracking-widest text-secondary">{formatDashboardDate()}</Text>
@@ -30,10 +30,7 @@ export function HomeScreen() {
           </View>
 
           <View className="gap-4">
-            <WeeklyProgressCard
-              completed={homeDashboardData.completedSessions}
-              goal={homeDashboardData.weeklyGoal}
-            />
+            <WeeklyProgressCard completed={homeDashboardData.completedSessions} goal={homeDashboardData.weeklyGoal} />
             <LastWorkoutCard workout={homeDashboardData.lastWorkout} />
             <AchievementCard achievement={homeDashboardData.achievement} />
 

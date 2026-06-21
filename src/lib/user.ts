@@ -1,18 +1,35 @@
 import type { User } from '@supabase/supabase-js';
 
-export function getUserFirstName(user: User | undefined): string {
-  const firstName = user?.user_metadata?.first_name;
-  if (typeof firstName === 'string' && firstName.trim()) {
-    return firstName.trim();
-  }
-
+export function getUserDisplayName(user: User | undefined): string {
   const fullName = user?.user_metadata?.full_name;
   if (typeof fullName === 'string' && fullName.trim()) {
-    return fullName.trim().split(/\s+/)[0];
+    return fullName.trim();
   }
 
-  const emailName = user?.email?.split('@')[0];
-  return emailName || 'Athlete';
+  const firstName = user?.user_metadata?.first_name;
+  const lastName = user?.user_metadata?.last_name;
+  const combinedName = [firstName, lastName]
+    .filter((value): value is string => typeof value === 'string' && Boolean(value.trim()))
+    .map((value) => value.trim())
+    .join(' ');
+
+  if (combinedName) {
+    return combinedName;
+  }
+
+  return user?.email?.split('@')[0] || 'Athlete';
+}
+
+export function getUserFirstName(user: User | undefined): string {
+  return getUserDisplayName(user).split(/\s+/)[0];
+}
+
+export function getUserInitials(user: User | undefined): string {
+  const words = getUserDisplayName(user).split(/\s+/).filter(Boolean);
+  return words
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase() ?? '')
+    .join('');
 }
 
 export function getGreeting(date = new Date()): string {
