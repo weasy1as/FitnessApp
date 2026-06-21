@@ -1,5 +1,5 @@
-import { PlaceholderScreen } from '../../src/components/PlaceholderScreen';
+import { WorkoutLogScreen } from '../../src/screens/WorkoutLogScreen';
 
 export default function WorkoutRoute() {
-  return <PlaceholderScreen name="Workout" />;
+  return <WorkoutLogScreen />;
 }

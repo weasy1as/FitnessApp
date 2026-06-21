@@ -6,19 +6,24 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from '../src/auth/AuthContext';
 import { Screen } from '../src/components/Screen';
+import { WorkoutProvider, useWorkouts } from '../src/workouts/WorkoutContext';
 
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <RootNavigator />
+        <WorkoutProvider>
+          <RootNavigator />
+        </WorkoutProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );
 }
 
 function RootNavigator() {
-  const { session, booting } = useAuth();
+  const { session, booting: authBooting } = useAuth();
+  const { booting: workoutsBooting } = useWorkouts();
+  const booting = authBooting || (Boolean(session) && workoutsBooting);
 
   if (booting) {
     return (
@@ -38,6 +43,7 @@ function RootNavigator() {
       </Stack.Protected>
       <Stack.Protected guard={Boolean(session)}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="workout/active" />
       </Stack.Protected>
     </Stack>
   );

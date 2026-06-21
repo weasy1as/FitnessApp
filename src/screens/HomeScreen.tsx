@@ -1,5 +1,4 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { useAuth } from '../auth/AuthContext';
@@ -10,10 +9,11 @@ import { WeeklyProgressCard } from '../components/home/WeeklyProgressCard';
 import { Screen } from '../components/Screen';
 import { homeDashboardData } from '../data/homeDashboard';
 import { formatDashboardDate, getGreeting, getUserFirstName } from '../lib/user';
+import { useStartWorkout } from '../workouts/useStartWorkout';
 
 export function HomeScreen() {
-  const router = useRouter();
   const { session } = useAuth();
+  const { activeWorkout, startWorkout } = useStartWorkout();
   const firstName = getUserFirstName(session?.user);
 
   return (
@@ -36,10 +36,12 @@ export function HomeScreen() {
 
             <Pressable
               className="mt-1 h-16 flex-row items-center justify-center gap-3 rounded-3xl bg-primary shadow-sm active:scale-[0.99] active:opacity-80"
-              onPress={() => router.navigate('/workout')}
+              onPress={startWorkout}
             >
-              <Text className="text-lg font-extrabold text-on-primary">Start Workout</Text>
-              <Ionicons color="#ffffff" name="play" size={22} />
+              <Text className="text-lg font-extrabold text-on-primary">
+                {activeWorkout ? 'Resume Workout' : 'Start Workout'}
+              </Text>
+              <Ionicons color="#ffffff" name={activeWorkout ? 'refresh' : 'play'} size={22} />
             </Pressable>
           </View>
 
