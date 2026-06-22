@@ -11,6 +11,7 @@ import {
 import type { ExerciseCatalogItem } from '../types/exercise';
 import type { ActiveWorkout, CompletedWorkout } from '../types/workout';
 import type { WorkoutSyncStatus } from '../types/workoutSync';
+import { usePbTracking } from '../personalBest/usePbTracking';
 import {
   clearActiveWorkout,
   loadActiveWorkout,
@@ -25,6 +26,10 @@ type WorkoutContextValue = {
   booting: boolean;
   historyRefreshing: boolean;
   historyError: string | null;
+  trackedPbExerciseIds: ReadonlySet<string>;
+  pbTrackingErrors: Record<string, string>;
+  pbTrackingPendingIds: ReadonlySet<string>;
+  togglePbTracking: (exerciseId: string) => Promise<void>;
   startNewWorkout: () => Promise<ActiveWorkout>;
   cancelWorkout: () => Promise<void>;
   finishWorkout: () => Promise<CompletedWorkout | null>;
@@ -41,6 +46,7 @@ export function WorkoutProvider({ children }: PropsWithChildren) {
   const { session } = useAuth();
   const userId = session?.user.id;
   const history = useWorkoutHistory(userId);
+  const pbTracking = usePbTracking(userId);
   const [activeWorkout, setActiveWorkout] = useState<ActiveWorkout | null>(null);
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const [activeLoading, setActiveLoading] = useState(false);
@@ -94,7 +100,8 @@ export function WorkoutProvider({ children }: PropsWithChildren) {
   );
 
   const booting =
-    Boolean(userId) && (activeLoading || loadedUserId !== userId || history.loading);
+    Boolean(userId) &&
+    (activeLoading || loadedUserId !== userId || history.loading || pbTracking.booting);
 
   async function startNewWorkout() {
     if (!userId) throw new Error('You must be signed in to start a workout.');
@@ -211,6 +218,10 @@ export function WorkoutProvider({ children }: PropsWithChildren) {
         booting,
         historyRefreshing: history.refreshing,
         historyError: history.cloudError,
+        trackedPbExerciseIds: pbTracking.trackedExerciseIds,
+        pbTrackingErrors: pbTracking.errors,
+        pbTrackingPendingIds: pbTracking.pendingExerciseIds,
+        togglePbTracking: pbTracking.toggle,
         startNewWorkout,
         cancelWorkout,
         finishWorkout,

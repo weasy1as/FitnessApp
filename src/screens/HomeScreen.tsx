@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { useAuth } from '../auth/AuthContext';
 import { AppHeader } from '../components/AppHeader';
@@ -7,8 +7,8 @@ import { AchievementCard } from '../components/home/AchievementCard';
 import { LastWorkoutCard } from '../components/home/LastWorkoutCard';
 import { WeeklyProgressCard } from '../components/home/WeeklyProgressCard';
 import { Screen } from '../components/Screen';
-import { homeDashboardData } from '../data/homeDashboard';
 import { calculateWeeklyConsistency } from '../lib/consistency';
+import { findLatestPersonalBestAchievement } from '../lib/personalBest';
 import { formatDashboardDate, getGreeting, getTrainingTarget, getUserFirstName } from '../lib/user';
 import { useStartWorkout } from '../workouts/useStartWorkout';
 import { useWorkouts } from '../workouts/WorkoutContext';
@@ -16,10 +16,15 @@ import { useWorkouts } from '../workouts/WorkoutContext';
 export function HomeScreen() {
   const { session } = useAuth();
   const { activeWorkout, startWorkout } = useStartWorkout();
-  const { completedWorkouts } = useWorkouts();
+  const { booting, completedWorkouts, trackedPbExerciseIds } = useWorkouts();
   const firstName = getUserFirstName(session?.user);
   const trainingTarget = getTrainingTarget(session?.user);
   const consistency = calculateWeeklyConsistency(completedWorkouts);
+  const lastWorkout = completedWorkouts[0] ?? null;
+  const latestPersonalBest = findLatestPersonalBestAchievement(
+    completedWorkouts,
+    trackedPbExerciseIds,
+  );
 
   return (
     <Screen edges={['top', 'right', 'left']}>
@@ -40,8 +45,14 @@ export function HomeScreen() {
               days={consistency.days}
               goal={trainingTarget}
             />
-            <LastWorkoutCard workout={homeDashboardData.lastWorkout} />
-            <AchievementCard achievement={homeDashboardData.achievement} />
+            {booting ? (
+              <View className="items-center rounded-3xl border border-outline bg-white py-12 shadow-sm">
+                <ActivityIndicator color="#0058bc" />
+              </View>
+            ) : (
+              <LastWorkoutCard workout={lastWorkout} />
+            )}
+            <AchievementCard achievement={latestPersonalBest} />
 
             <Pressable
               className="mt-1 h-16 flex-row items-center justify-center gap-3 rounded-3xl bg-primary shadow-sm active:scale-[0.99] active:opacity-80"

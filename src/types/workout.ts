@@ -12,8 +12,6 @@ export type WorkoutExercise = {
   primaryMuscle?: string | null;
   equipment?: string | null;
   imageUrl?: string | null;
-  lastPerformance?: string;
-  personalBestKg?: number;
   sets: WorkoutSet[];
 };
 

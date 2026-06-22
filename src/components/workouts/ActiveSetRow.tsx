@@ -5,6 +5,7 @@ import type { WorkoutSet } from '../../types/workout';
 
 type Props = {
   index: number;
+  isPersonalBest?: boolean;
   set: WorkoutSet;
   onChange: (values: { weightKg?: number; reps?: number; completed?: boolean }) => void;
 };
@@ -14,17 +15,24 @@ function parseNumber(value: string): number {
   return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
 }
 
-export function ActiveSetRow({ index, set, onChange }: Props) {
+export function ActiveSetRow({ index, isPersonalBest = false, set, onChange }: Props) {
   return (
     <View
       className={
         'flex-row items-center rounded-2xl border px-3 py-3 ' +
-        (set.completed ? 'border-transparent bg-surface-container-low' : 'border-primary bg-white')
+        (isPersonalBest
+          ? 'border-[#d4a72c] bg-[#fff8dc]'
+          : set.completed
+            ? 'border-transparent bg-surface-container-low'
+            : 'border-primary bg-white')
       }
     >
-      <Text className={'w-8 text-base font-extrabold ' + (set.completed ? 'text-on-surface-variant' : 'text-primary')}>
-        {index + 1}
-      </Text>
+      <View className="w-8 items-start">
+        <Text className={'text-base font-extrabold ' + (set.completed ? 'text-on-surface-variant' : 'text-primary')}>
+          {index + 1}
+        </Text>
+        {isPersonalBest ? <Text className="text-[9px] font-extrabold text-[#744210]">PB</Text> : null}
+      </View>
 
       <TextInput
         className="mr-3 h-11 flex-1 border-b border-outline px-2 text-base text-on-surface"

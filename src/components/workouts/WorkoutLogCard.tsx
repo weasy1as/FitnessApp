@@ -1,7 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
-import { countCompletedSets, formatWorkoutDate, formatWorkoutDuration } from '../../lib/workout';
+import {
+  countCompletedSets,
+  formatWorkoutDate,
+  formatWorkoutDuration,
+  getHeaviestCompletedSet,
+} from '../../lib/workout';
 import type { CompletedWorkout } from '../../types/workout';
 import type { WorkoutSyncStatus } from '../../types/workoutSync';
 
@@ -48,9 +53,7 @@ export function WorkoutLogCard({ workout, syncStatus, onRetrySync }: Props) {
       ) : null}
 
       {workout.exercises.slice(0, 3).map((exercise, index) => {
-        const bestSet = exercise.sets
-          .filter((set) => set.completed)
-          .sort((a, b) => b.weightKg - a.weightKg)[0];
+        const bestSet = getHeaviestCompletedSet(exercise);
 
         return (
           <View

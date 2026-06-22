@@ -74,3 +74,12 @@ export function filterCompletedExercises(exercises: WorkoutExercise[]): WorkoutE
     }))
     .filter((exercise) => exercise.sets.length > 0);
 }
+
+export function getHeaviestCompletedSet(exercise: WorkoutExercise): WorkoutSet | undefined {
+  return exercise.sets
+    .filter((set) => set.completed)
+    .reduce<WorkoutSet | undefined>(
+      (heaviest, set) => (!heaviest || set.weightKg > heaviest.weightKg ? set : heaviest),
+      undefined,
+    );
+}

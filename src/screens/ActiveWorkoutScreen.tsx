@@ -1,12 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { usePreventRemove } from '@react-navigation/native';
 import { type Href, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { ActiveExerciseCard } from '../components/workouts/ActiveExerciseCard';
 import { Screen } from '../components/Screen';
 import { countCompletedSets, formatElapsedTime } from '../lib/workout';
+import { calculatePersonalBests } from '../lib/personalBest';
 import { useElapsedTime } from '../workouts/useElapsedTime';
 import { useWorkouts } from '../workouts/WorkoutContext';
 
@@ -14,15 +15,24 @@ export function ActiveWorkoutScreen() {
   const router = useRouter();
   const {
     activeWorkout,
+    completedWorkouts,
     booting,
     addSet,
     cancelWorkout,
     finishWorkout,
+    pbTrackingErrors,
+    pbTrackingPendingIds,
     removeExercise,
+    togglePbTracking,
+    trackedPbExerciseIds,
     updateSet,
   } = useWorkouts();
   const elapsed = useElapsedTime(activeWorkout?.startedAt);
   const [finishing, setFinishing] = useState(false);
+  const personalBests = useMemo(
+    () => calculatePersonalBests(completedWorkouts, trackedPbExerciseIds),
+    [completedWorkouts, trackedPbExerciseIds],
+  );
 
   useEffect(() => {
     if (!booting && !activeWorkout) {
@@ -122,15 +132,29 @@ export function ActiveWorkoutScreen() {
           </View>
 
           <View className="gap-5">
-            {activeWorkout.exercises.map((exercise) => (
-              <ActiveExerciseCard
-                exercise={exercise}
-                key={exercise.id}
-                onAddSet={() => addSet(exercise.id)}
-                onRemove={() => confirmRemoveExercise(exercise.id, exercise.name)}
-                onUpdateSet={(setId, values) => updateSet(exercise.id, setId, values)}
-              />
-            ))}
+            {activeWorkout.exercises.map((exercise) => {
+              const catalogExerciseId = exercise.catalogExerciseId;
+              const trackingEnabled = Boolean(
+                catalogExerciseId && trackedPbExerciseIds.has(catalogExerciseId),
+              );
+
+              return (
+                <ActiveExerciseCard
+                  exercise={exercise}
+                  key={exercise.id}
+                  onAddSet={() => addSet(exercise.id)}
+                  onRemove={() => confirmRemoveExercise(exercise.id, exercise.name)}
+                  onTogglePbTracking={() => {
+                    if (catalogExerciseId) void togglePbTracking(catalogExerciseId);
+                  }}
+                  onUpdateSet={(setId, values) => updateSet(exercise.id, setId, values)}
+                  pbTrackingEnabled={trackingEnabled}
+                  pbTrackingError={catalogExerciseId ? pbTrackingErrors[catalogExerciseId] : undefined}
+                  pbTrackingPending={Boolean(catalogExerciseId && pbTrackingPendingIds.has(catalogExerciseId))}
+                  personalBestKg={catalogExerciseId ? personalBests.get(catalogExerciseId)?.weightKg : undefined}
+                />
+              );
+            })}
 
             {!activeWorkout.exercises.length ? (
               <View className="items-center rounded-3xl border border-outline bg-white px-6 py-10">
