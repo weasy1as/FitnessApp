@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { usePreventRemove } from '@react-navigation/native';
-import { useRouter } from 'expo-router';
+import { type Href, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 
@@ -15,10 +15,10 @@ export function ActiveWorkoutScreen() {
   const {
     activeWorkout,
     booting,
-    addExercise,
     addSet,
     cancelWorkout,
     finishWorkout,
+    removeExercise,
     updateSet,
   } = useWorkouts();
   const elapsed = useElapsedTime(activeWorkout?.startedAt);
@@ -56,6 +56,13 @@ export function ActiveWorkoutScreen() {
       return;
     }
     await finishWorkout();
+  }
+
+  function confirmRemoveExercise(exerciseId: string, exerciseName: string) {
+    Alert.alert('Remove exercise?', `${exerciseName} and all of its sets will be removed from this workout.`, [
+      { text: 'Keep exercise', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => removeExercise(exerciseId) },
+    ]);
   }
 
   if (booting || !activeWorkout) {
@@ -100,13 +107,26 @@ export function ActiveWorkoutScreen() {
                 exercise={exercise}
                 key={exercise.id}
                 onAddSet={() => addSet(exercise.id)}
+                onRemove={() => confirmRemoveExercise(exercise.id, exercise.name)}
                 onUpdateSet={(setId, values) => updateSet(exercise.id, setId, values)}
               />
             ))}
 
+            {!activeWorkout.exercises.length ? (
+              <View className="items-center rounded-3xl border border-outline bg-white px-6 py-10">
+                <View className="h-14 w-14 items-center justify-center rounded-full bg-[#d9f8ff]">
+                  <Ionicons color="#00677f" name="barbell-outline" size={28} />
+                </View>
+                <Text className="mt-4 text-xl font-extrabold text-on-surface">Build your workout</Text>
+                <Text className="mt-2 text-center text-sm leading-5 text-on-surface-variant">
+                  Choose one or more exercises from the catalog to get started.
+                </Text>
+              </View>
+            ) : null}
+
             <Pressable
               className="h-28 items-center justify-center rounded-3xl border-2 border-dashed border-outline bg-surface-container-low active:opacity-70"
-              onPress={addExercise}
+              onPress={() => router.push('/workout/exercises' as Href)}
             >
               <Ionicons color="#00677f" name="add-circle-outline" size={27} />
               <Text className="mt-2 text-sm font-extrabold uppercase tracking-wide text-secondary">Add exercise</Text>

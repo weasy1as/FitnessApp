@@ -44,6 +44,7 @@ function RootNavigator() {
       <Stack.Protected guard={Boolean(session)}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="workout/active" />
+        <Stack.Screen name="workout/exercises" />
       </Stack.Protected>
     </Stack>
   );

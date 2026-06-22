@@ -7,29 +7,42 @@ import { ActiveSetRow } from './ActiveSetRow';
 type Props = {
   exercise: WorkoutExercise;
   onAddSet: () => void;
+  onRemove: () => void;
   onUpdateSet: (
     setId: string,
     values: { weightKg?: number; reps?: number; completed?: boolean },
   ) => void;
 };
 
-export function ActiveExerciseCard({ exercise, onAddSet, onUpdateSet }: Props) {
+export function ActiveExerciseCard({ exercise, onAddSet, onRemove, onUpdateSet }: Props) {
   return (
     <View className="rounded-3xl border border-outline bg-white p-5 shadow-sm">
       <View className="mb-5 flex-row items-start justify-between">
         <View className="flex-1 pr-3">
           <Text className="text-xl font-extrabold leading-7 text-on-surface">{exercise.name}</Text>
-          <Text className="mt-2 text-sm text-on-surface-variant">
-            Last: <Text className="font-bold text-on-surface">{exercise.lastPerformance}</Text>
-          </Text>
+          {exercise.primaryMuscle || exercise.equipment ? (
+            <Text className="mt-1 text-sm capitalize text-on-surface-variant">
+              {[exercise.primaryMuscle, exercise.equipment].filter(Boolean).join(' · ')}
+            </Text>
+          ) : null}
+          {exercise.lastPerformance ? (
+            <Text className="mt-2 text-sm text-on-surface-variant">
+              Last: <Text className="font-bold text-on-surface">{exercise.lastPerformance}</Text>
+            </Text>
+          ) : null}
         </View>
 
-        {exercise.personalBestKg ? (
-          <View className="flex-row items-center gap-1.5 rounded-2xl bg-[#e0f7fa] px-3 py-2">
-            <Ionicons color="#006064" name="medal-outline" size={17} />
-            <Text className="text-xs font-extrabold text-[#006064]">PB: {exercise.personalBestKg}kg</Text>
-          </View>
-        ) : null}
+        <View className="items-end gap-2">
+          <Pressable accessibilityLabel={`Remove ${exercise.name}`} className="h-10 w-10 items-center justify-center rounded-full bg-surface-container active:opacity-60" onPress={onRemove}>
+            <Ionicons color="#6f7583" name="trash-outline" size={19} />
+          </Pressable>
+          {exercise.personalBestKg ? (
+            <View className="flex-row items-center gap-1.5 rounded-2xl bg-[#e0f7fa] px-3 py-2">
+              <Ionicons color="#006064" name="medal-outline" size={17} />
+              <Text className="text-xs font-extrabold text-[#006064]">PB: {exercise.personalBestKg}kg</Text>
+            </View>
+          ) : null}
+        </View>
       </View>
 
       <View className="mb-2 flex-row px-3">

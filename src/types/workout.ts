@@ -7,8 +7,12 @@ export type WorkoutSet = {
 
 export type WorkoutExercise = {
   id: string;
+  catalogExerciseId?: string;
   name: string;
-  lastPerformance: string;
+  primaryMuscle?: string | null;
+  equipment?: string | null;
+  imageUrl?: string | null;
+  lastPerformance?: string;
   personalBestKg?: number;
   sets: WorkoutSet[];
 };

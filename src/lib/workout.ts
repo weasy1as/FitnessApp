@@ -1,23 +1,19 @@
+import type { ExerciseCatalogItem } from '../types/exercise';
 import type { ActiveWorkout, WorkoutExercise, WorkoutSet } from '../types/workout';
-
-const exerciseCatalog = [
-  { name: 'Bench Press (Barbell)', lastPerformance: '75kg x 5', personalBestKg: 80, suggestedKg: 77.5, reps: 5 },
-  { name: 'Barbell Row', lastPerformance: '82.5kg x 8', personalBestKg: 85, suggestedKg: 85, reps: 8 },
-  { name: 'Overhead Press', lastPerformance: '57.5kg x 6', personalBestKg: 60, suggestedKg: 60, reps: 6 },
-];
 
 export function createId(prefix: string): string {
   return prefix + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
 }
 
-export function createExercise(index: number): WorkoutExercise {
-  const template = exerciseCatalog[index % exerciseCatalog.length];
+export function createExercise(exercise: ExerciseCatalogItem): WorkoutExercise {
   return {
     id: createId('exercise'),
-    name: template.name,
-    lastPerformance: template.lastPerformance,
-    personalBestKg: template.personalBestKg,
-    sets: [createSet(template.suggestedKg, template.reps)],
+    catalogExerciseId: exercise.id,
+    name: exercise.name,
+    primaryMuscle: exercise.primaryMuscle,
+    equipment: exercise.equipment,
+    imageUrl: exercise.imageUrl,
+    sets: [createSet()],
   };
 }
 
@@ -36,7 +32,7 @@ export function createWorkoutDraft(): ActiveWorkout {
     status: 'active',
     name: 'Workout Session',
     startedAt: new Date().toISOString(),
-    exercises: [createExercise(0)],
+    exercises: [],
   };
 }
 

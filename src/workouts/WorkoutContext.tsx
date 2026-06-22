@@ -3,6 +3,7 @@ import { createContext, type PropsWithChildren, useContext, useEffect, useMemo, 
 import { useAuth } from '../auth/AuthContext';
 import { dummyWorkoutHistory } from '../data/workoutHistory';
 import { countCompletedSets, createExercise, createSet, createWorkoutDraft } from '../lib/workout';
+import type { ExerciseCatalogItem } from '../types/exercise';
 import type { ActiveWorkout, CompletedWorkout } from '../types/workout';
 import {
   clearActiveWorkout,
@@ -19,7 +20,8 @@ type WorkoutContextValue = {
   startNewWorkout: () => Promise<ActiveWorkout>;
   cancelWorkout: () => Promise<void>;
   finishWorkout: () => Promise<CompletedWorkout | null>;
-  addExercise: () => void;
+  addExercises: (exercises: ExerciseCatalogItem[]) => void;
+  removeExercise: (exerciseId: string) => void;
   addSet: (exerciseId: string) => void;
   updateSet: (exerciseId: string, setId: string, values: { weightKg?: number; reps?: number; completed?: boolean }) => void;
 };
@@ -135,10 +137,25 @@ export function WorkoutProvider({ children }: PropsWithChildren) {
     });
   }
 
-  function addExercise() {
+  function addExercises(exercises: ExerciseCatalogItem[]) {
+    updateActive((current) => {
+      const existingCatalogIds = new Set(
+        current.exercises
+          .map((exercise) => exercise.catalogExerciseId)
+          .filter((id): id is string => Boolean(id)),
+      );
+      const newExercises = exercises
+        .filter((exercise) => !existingCatalogIds.has(exercise.id))
+        .map(createExercise);
+
+      return { ...current, exercises: [...current.exercises, ...newExercises] };
+    });
+  }
+
+  function removeExercise(exerciseId: string) {
     updateActive((current) => ({
       ...current,
-      exercises: [...current.exercises, createExercise(current.exercises.length)],
+      exercises: current.exercises.filter((exercise) => exercise.id !== exerciseId),
     }));
   }
 
@@ -188,7 +205,8 @@ export function WorkoutProvider({ children }: PropsWithChildren) {
         startNewWorkout,
         cancelWorkout,
         finishWorkout,
-        addExercise,
+        addExercises,
+        removeExercise,
         addSet,
         updateSet,
       }}
