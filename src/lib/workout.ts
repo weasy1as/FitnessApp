@@ -65,3 +65,12 @@ export function countCompletedSets(exercises: WorkoutExercise[]): number {
     0,
   );
 }
+
+export function filterCompletedExercises(exercises: WorkoutExercise[]): WorkoutExercise[] {
+  return exercises
+    .map((exercise) => ({
+      ...exercise,
+      sets: exercise.sets.filter((set) => set.completed),
+    }))
+    .filter((exercise) => exercise.sets.length > 0);
+}

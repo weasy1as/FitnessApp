@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { usePreventRemove } from '@react-navigation/native';
 import { type Href, useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { ActiveExerciseCard } from '../components/workouts/ActiveExerciseCard';
@@ -22,6 +22,7 @@ export function ActiveWorkoutScreen() {
     updateSet,
   } = useWorkouts();
   const elapsed = useElapsedTime(activeWorkout?.startedAt);
+  const [finishing, setFinishing] = useState(false);
 
   useEffect(() => {
     if (!booting && !activeWorkout) {
@@ -55,7 +56,18 @@ export function ActiveWorkoutScreen() {
       Alert.alert('Complete a set first', 'Mark at least one set as complete before finishing.');
       return;
     }
-    await finishWorkout();
+    setFinishing(true);
+    try {
+      await finishWorkout();
+    } catch (error) {
+      console.warn('Unable to finish workout.', error);
+      Alert.alert(
+        'Workout not saved',
+        'Your active workout is still safe on this device. Please try finishing again.',
+      );
+    } finally {
+      setFinishing(false);
+    }
   }
 
   function confirmRemoveExercise(exerciseId: string, exerciseName: string) {
@@ -85,8 +97,16 @@ export function ActiveWorkoutScreen() {
           <Ionicons color="#0058bc" name="timer-outline" size={21} />
           <Text className="text-base font-extrabold text-on-surface">Workout Session</Text>
         </View>
-        <Pressable className="w-20 items-end active:opacity-70" onPress={() => void handleFinish()}>
-          <Text className="font-extrabold uppercase text-secondary">Finish</Text>
+        <Pressable
+          className="w-20 items-end active:opacity-70 disabled:opacity-50"
+          disabled={finishing}
+          onPress={() => void handleFinish()}
+        >
+          {finishing ? (
+            <ActivityIndicator color="#00677f" size="small" />
+          ) : (
+            <Text className="font-extrabold uppercase text-secondary">Finish</Text>
+          )}
         </Pressable>
       </View>
 

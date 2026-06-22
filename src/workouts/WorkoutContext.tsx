@@ -1,28 +1,37 @@
 import { createContext, type PropsWithChildren, useContext, useEffect, useMemo, useState } from 'react';
 
 import { useAuth } from '../auth/AuthContext';
-import { dummyWorkoutHistory } from '../data/workoutHistory';
-import { countCompletedSets, createExercise, createSet, createWorkoutDraft } from '../lib/workout';
+import {
+  countCompletedSets,
+  createExercise,
+  createSet,
+  createWorkoutDraft,
+  filterCompletedExercises,
+} from '../lib/workout';
 import type { ExerciseCatalogItem } from '../types/exercise';
 import type { ActiveWorkout, CompletedWorkout } from '../types/workout';
+import type { WorkoutSyncStatus } from '../types/workoutSync';
 import {
   clearActiveWorkout,
   loadActiveWorkout,
-  loadCompletedWorkouts,
   saveActiveWorkout,
-  saveCompletedWorkouts,
 } from './workoutStorage';
+import { useWorkoutHistory } from './useWorkoutHistory';
 
 type WorkoutContextValue = {
   activeWorkout: ActiveWorkout | null;
   completedWorkouts: CompletedWorkout[];
+  workoutSyncStatus: Record<string, WorkoutSyncStatus>;
   booting: boolean;
+  historyRefreshing: boolean;
+  historyError: string | null;
   startNewWorkout: () => Promise<ActiveWorkout>;
   cancelWorkout: () => Promise<void>;
   finishWorkout: () => Promise<CompletedWorkout | null>;
   addExercises: (exercises: ExerciseCatalogItem[]) => void;
   removeExercise: (exerciseId: string) => void;
   addSet: (exerciseId: string) => void;
+  retryWorkoutSync: (workoutId: string) => Promise<void>;
   updateSet: (exerciseId: string, setId: string, values: { weightKg?: number; reps?: number; completed?: boolean }) => void;
 };
 
@@ -31,10 +40,10 @@ const WorkoutContext = createContext<WorkoutContextValue | undefined>(undefined)
 export function WorkoutProvider({ children }: PropsWithChildren) {
   const { session } = useAuth();
   const userId = session?.user.id;
+  const history = useWorkoutHistory(userId);
   const [activeWorkout, setActiveWorkout] = useState<ActiveWorkout | null>(null);
-  const [storedWorkouts, setStoredWorkouts] = useState<CompletedWorkout[]>([]);
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [activeLoading, setActiveLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -42,32 +51,26 @@ export function WorkoutProvider({ children }: PropsWithChildren) {
     async function load() {
       if (!userId) {
         setActiveWorkout(null);
-        setStoredWorkouts([]);
         setLoadedUserId(null);
-        setLoading(false);
+        setActiveLoading(false);
         return;
       }
 
-      setLoading(true);
+      setActiveLoading(true);
       try {
-        const [active, history] = await Promise.all([
-          loadActiveWorkout(userId),
-          loadCompletedWorkouts(userId),
-        ]);
+        const active = await loadActiveWorkout(userId);
         if (mounted) {
           setActiveWorkout(active);
-          setStoredWorkouts(history);
         }
       } catch (error) {
         console.warn('Unable to restore workout data.', error);
         if (mounted) {
           setActiveWorkout(null);
-          setStoredWorkouts([]);
         }
       } finally {
         if (mounted) {
           setLoadedUserId(userId);
-          setLoading(false);
+          setActiveLoading(false);
         }
       }
     }
@@ -79,14 +82,19 @@ export function WorkoutProvider({ children }: PropsWithChildren) {
   }, [userId]);
 
   const completedWorkouts = useMemo(
+    () => history.records.map((record) => record.workout),
+    [history.records],
+  );
+  const workoutSyncStatus = useMemo(
     () =>
-      [...storedWorkouts, ...dummyWorkoutHistory].sort(
-        (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
-      ),
-    [storedWorkouts],
+      Object.fromEntries(
+        history.records.map((record) => [record.workout.id, record.syncStatus]),
+      ) as Record<string, WorkoutSyncStatus>,
+    [history.records],
   );
 
-  const booting = Boolean(userId) && (loading || loadedUserId !== userId);
+  const booting =
+    Boolean(userId) && (activeLoading || loadedUserId !== userId || history.loading);
 
   async function startNewWorkout() {
     if (!userId) throw new Error('You must be signed in to start a workout.');
@@ -108,6 +116,7 @@ export function WorkoutProvider({ children }: PropsWithChildren) {
     }
 
     const completedAt = new Date().toISOString();
+    const completedExercises = filterCompletedExercises(activeWorkout.exercises);
     const completed: CompletedWorkout = {
       ...activeWorkout,
       status: 'completed',
@@ -116,15 +125,12 @@ export function WorkoutProvider({ children }: PropsWithChildren) {
         1,
         Math.round((new Date(completedAt).getTime() - new Date(activeWorkout.startedAt).getTime()) / 1000),
       ),
+      exercises: completedExercises,
     };
 
-    const nextHistory = [completed, ...storedWorkouts];
-    setStoredWorkouts(nextHistory);
+    await history.addCompletedWorkout(completed);
+    await clearActiveWorkout(userId);
     setActiveWorkout(null);
-    await Promise.all([
-      saveCompletedWorkouts(userId, nextHistory),
-      clearActiveWorkout(userId),
-    ]);
     return completed;
   }
 
@@ -201,13 +207,17 @@ export function WorkoutProvider({ children }: PropsWithChildren) {
       value={{
         activeWorkout,
         completedWorkouts,
+        workoutSyncStatus,
         booting,
+        historyRefreshing: history.refreshing,
+        historyError: history.cloudError,
         startNewWorkout,
         cancelWorkout,
         finishWorkout,
         addExercises,
         removeExercise,
         addSet,
+        retryWorkoutSync: history.retryWorkoutSync,
         updateSet,
       }}
     >

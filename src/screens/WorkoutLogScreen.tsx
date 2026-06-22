@@ -9,7 +9,14 @@ import { useWorkouts } from '../workouts/WorkoutContext';
 
 export function WorkoutLogScreen() {
   const { activeWorkout, startWorkout } = useStartWorkout();
-  const { booting, completedWorkouts } = useWorkouts();
+  const {
+    booting,
+    completedWorkouts,
+    historyError,
+    historyRefreshing,
+    retryWorkoutSync,
+    workoutSyncStatus,
+  } = useWorkouts();
 
   return (
     <Screen edges={['top', 'right', 'left']}>
@@ -48,15 +55,44 @@ export function WorkoutLogScreen() {
 
           <Text className="mb-3 px-1 text-xs font-extrabold uppercase tracking-widest text-secondary">Previous workouts</Text>
 
+          {historyError ? (
+            <View className="mb-4 flex-row items-center rounded-2xl border border-outline bg-surface-container-low p-4">
+              <Ionicons color="#00677f" name="cloud-offline-outline" size={21} />
+              <Text className="ml-3 flex-1 text-sm leading-5 text-on-surface-variant">
+                Showing saved workouts. Cloud history will refresh when you are back online.
+              </Text>
+            </View>
+          ) : historyRefreshing ? (
+            <View className="mb-4 flex-row items-center gap-2 px-1">
+              <ActivityIndicator color="#00677f" size="small" />
+              <Text className="text-xs font-bold text-on-surface-variant">Refreshing history...</Text>
+            </View>
+          ) : null}
+
           {booting ? (
             <View className="items-center py-12">
               <ActivityIndicator color="#0058bc" />
             </View>
           ) : (
             <View className="gap-4">
-              {completedWorkouts.map((workout) => (
-                <WorkoutLogCard key={workout.id} workout={workout} />
-              ))}
+              {completedWorkouts.length ? (
+                completedWorkouts.map((workout) => (
+                  <WorkoutLogCard
+                    key={workout.id}
+                    onRetrySync={() => void retryWorkoutSync(workout.id)}
+                    syncStatus={workoutSyncStatus[workout.id]}
+                    workout={workout}
+                  />
+                ))
+              ) : (
+                <View className="items-center rounded-3xl border border-outline bg-white px-6 py-10">
+                  <Ionicons color="#00677f" name="calendar-outline" size={30} />
+                  <Text className="mt-3 text-lg font-extrabold text-on-surface">No completed workouts yet</Text>
+                  <Text className="mt-2 text-center text-sm leading-5 text-on-surface-variant">
+                    Finish your first workout and it will appear here.
+                  </Text>
+                </View>
+              )}
             </View>
           )}
         </View>
