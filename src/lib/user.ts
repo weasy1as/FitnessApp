@@ -1,5 +1,18 @@
 import type { User } from '@supabase/supabase-js';
 
+import type { TrainingTarget } from '../types/settings';
+
+export const DEFAULT_TRAINING_TARGET: TrainingTarget = 4;
+
+export function getTrainingTarget(user: User | undefined): TrainingTarget {
+  const value = user?.user_metadata?.training_target;
+  return isTrainingTarget(value) ? value : DEFAULT_TRAINING_TARGET;
+}
+
+function isTrainingTarget(value: unknown): value is TrainingTarget {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 7;
+}
+
 export function getUserDisplayName(user: User | undefined): string {
   const fullName = user?.user_metadata?.full_name;
   if (typeof fullName === 'string' && fullName.trim()) {

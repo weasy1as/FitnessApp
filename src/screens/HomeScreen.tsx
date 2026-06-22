@@ -8,13 +8,18 @@ import { LastWorkoutCard } from '../components/home/LastWorkoutCard';
 import { WeeklyProgressCard } from '../components/home/WeeklyProgressCard';
 import { Screen } from '../components/Screen';
 import { homeDashboardData } from '../data/homeDashboard';
-import { formatDashboardDate, getGreeting, getUserFirstName } from '../lib/user';
+import { calculateWeeklyConsistency } from '../lib/consistency';
+import { formatDashboardDate, getGreeting, getTrainingTarget, getUserFirstName } from '../lib/user';
 import { useStartWorkout } from '../workouts/useStartWorkout';
+import { useWorkouts } from '../workouts/WorkoutContext';
 
 export function HomeScreen() {
   const { session } = useAuth();
   const { activeWorkout, startWorkout } = useStartWorkout();
+  const { completedWorkouts } = useWorkouts();
   const firstName = getUserFirstName(session?.user);
+  const trainingTarget = getTrainingTarget(session?.user);
+  const consistency = calculateWeeklyConsistency(completedWorkouts);
 
   return (
     <Screen edges={['top', 'right', 'left']}>
@@ -30,7 +35,11 @@ export function HomeScreen() {
           </View>
 
           <View className="gap-4">
-            <WeeklyProgressCard completed={homeDashboardData.completedSessions} goal={homeDashboardData.weeklyGoal} />
+            <WeeklyProgressCard
+              completed={consistency.completedDays}
+              days={consistency.days}
+              goal={trainingTarget}
+            />
             <LastWorkoutCard workout={homeDashboardData.lastWorkout} />
             <AchievementCard achievement={homeDashboardData.achievement} />
 

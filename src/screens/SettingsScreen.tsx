@@ -9,11 +9,11 @@ import { ProfileCard } from '../components/settings/ProfileCard';
 import { SignOutButton } from '../components/settings/SignOutButton';
 import { TrainingTargetCard } from '../components/settings/TrainingTargetCard';
 import { getUserDisplayName, getUserInitials } from '../lib/user';
-import type { TrainingTarget } from '../types/settings';
+import { useTrainingTarget } from '../profile/useTrainingTarget';
 
 export function SettingsScreen() {
   const { session } = useAuth();
-  const [trainingTarget, setTrainingTarget] = useState<TrainingTarget>(4);
+  const trainingTarget = useTrainingTarget();
   const [signingOut, setSigningOut] = useState(false);
 
   const user = session?.user;
@@ -45,7 +45,14 @@ export function SettingsScreen() {
 
           <View className="gap-7">
             <ProfileCard email={email} initials={getUserInitials(user)} name={name} />
-            <TrainingTargetCard onChange={setTrainingTarget} value={trainingTarget} />
+            <TrainingTargetCard
+              error={trainingTarget.error}
+              hasChanges={trainingTarget.hasChanges}
+              onChange={trainingTarget.setDraftTarget}
+              onSave={() => void trainingTarget.save()}
+              saving={trainingTarget.saving}
+              value={trainingTarget.draftTarget}
+            />
             <SignOutButton loading={signingOut} onPress={handleSignOut} />
           </View>
         </View>

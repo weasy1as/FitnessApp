@@ -1,11 +1,14 @@
 import { Text, View } from 'react-native';
 
+import type { WeeklyConsistencyDay } from '../../types/consistency';
+
 type Props = {
   completed: number;
+  days: WeeklyConsistencyDay[];
   goal: number;
 };
 
-export function WeeklyProgressCard({ completed, goal }: Props) {
+export function WeeklyProgressCard({ completed, days, goal }: Props) {
   const remaining = Math.max(goal - completed, 0);
 
   return (
@@ -22,12 +25,22 @@ export function WeeklyProgressCard({ completed, goal }: Props) {
         </View>
       </View>
 
-      <View className="flex-row gap-2">
-        {Array.from({ length: goal }, (_, index) => (
-          <View
-            className={'h-2.5 flex-1 rounded-full ' + (index < completed ? 'bg-accent' : 'bg-surface-container')}
-            key={index}
-          />
+      <View className="flex-row justify-between">
+        {days.map((day) => (
+          <View className="items-center gap-2" key={day.dateKey}>
+            <View
+              accessibilityLabel={`${day.label}: ${day.hasWorkout ? 'workout completed' : 'no workout'}`}
+              className={
+                'h-8 w-8 items-center justify-center rounded-full ' +
+                (day.hasWorkout ? 'bg-accent' : 'bg-surface-container')
+              }
+            >
+              <View className={'h-2 w-2 rounded-full ' + (day.hasWorkout ? 'bg-on-accent' : 'bg-outline')} />
+            </View>
+            <Text className={'text-xs font-bold ' + (day.isToday ? 'text-primary' : 'text-on-surface-variant')}>
+              {day.label}
+            </Text>
+          </View>
         ))}
       </View>
     </View>

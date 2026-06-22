@@ -18,8 +18,6 @@ export type AchievementSummary = {
 };
 
 export type HomeDashboardData = {
-  completedSessions: number;
-  weeklyGoal: number;
   lastWorkout: LastWorkoutSummary;
   achievement: AchievementSummary;
 };

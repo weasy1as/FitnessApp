@@ -1,8 +1,6 @@
 import type { HomeDashboardData } from '../types/home';
 
 export const homeDashboardData: HomeDashboardData = {
-  completedSessions: 3,
-  weeklyGoal: 4,
   lastWorkout: {
     name: 'Upper Body A',
     dateLabel: '2 days ago',

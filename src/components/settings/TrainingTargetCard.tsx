@@ -1,15 +1,19 @@
-import { Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import type { TrainingTarget } from '../../types/settings';
 
-const targets: TrainingTarget[] = [2, 3, 4, 5, 6];
+const targets: TrainingTarget[] = [1, 2, 3, 4, 5, 6, 7];
 
 type Props = {
+  error: string | null;
+  hasChanges: boolean;
   onChange: (target: TrainingTarget) => void;
+  onSave: () => void;
+  saving: boolean;
   value: TrainingTarget;
 };
 
-export function TrainingTargetCard({ onChange, value }: Props) {
+export function TrainingTargetCard({ error, hasChanges, onChange, onSave, saving, value }: Props) {
   return (
     <View>
       <Text className="mb-3 px-1 text-xs font-extrabold uppercase tracking-widest text-secondary">Training target</Text>
@@ -38,9 +42,25 @@ export function TrainingTargetCard({ onChange, value }: Props) {
           })}
         </View>
 
-        <Text className="mt-3 text-center text-xs text-on-surface-variant">
-          This preference is stored locally for this preview.
-        </Text>
+        {error ? <Text className="mt-4 text-sm leading-5 text-[#ba1a1a]">{error}</Text> : null}
+
+        <Pressable
+          accessibilityRole="button"
+          className={
+            'mt-5 h-12 items-center justify-center rounded-2xl ' +
+            (hasChanges && !saving ? 'bg-primary active:opacity-80' : 'bg-surface-container')
+          }
+          disabled={!hasChanges || saving}
+          onPress={onSave}
+        >
+          {saving ? (
+            <ActivityIndicator color="#5b5f62" />
+          ) : (
+            <Text className={'text-base font-extrabold ' + (hasChanges ? 'text-on-primary' : 'text-on-surface-variant')}>
+              Save target
+            </Text>
+          )}
+        </Pressable>
       </View>
     </View>
   );
