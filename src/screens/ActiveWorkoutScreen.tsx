@@ -8,6 +8,7 @@ import { ActiveExerciseCard } from '../components/workouts/ActiveExerciseCard';
 import { Screen } from '../components/Screen';
 import { countCompletedSets, formatElapsedTime } from '../lib/workout';
 import { calculatePersonalBests } from '../lib/personalBest';
+import { calculateExerciseProgressions } from '../lib/progressiveOverload';
 import { useElapsedTime } from '../workouts/useElapsedTime';
 import { useWorkouts } from '../workouts/WorkoutContext';
 
@@ -32,6 +33,10 @@ export function ActiveWorkoutScreen() {
   const personalBests = useMemo(
     () => calculatePersonalBests(completedWorkouts, trackedPbExerciseIds),
     [completedWorkouts, trackedPbExerciseIds],
+  );
+  const exerciseProgressions = useMemo(
+    () => calculateExerciseProgressions(completedWorkouts),
+    [completedWorkouts],
   );
 
   useEffect(() => {
@@ -137,12 +142,23 @@ export function ActiveWorkoutScreen() {
               const trackingEnabled = Boolean(
                 catalogExerciseId && trackedPbExerciseIds.has(catalogExerciseId),
               );
+              const progression = catalogExerciseId
+                ? exerciseProgressions.get(catalogExerciseId)
+                : undefined;
+              const nextIncompleteSet = exercise.sets.find((set) => !set.completed);
 
               return (
                 <ActiveExerciseCard
                   exercise={exercise}
                   key={exercise.id}
                   onAddSet={() => addSet(exercise.id)}
+                  onApplyProgression={() => {
+                    if (nextIncompleteSet && progression?.suggestion) {
+                      updateSet(exercise.id, nextIncompleteSet.id, {
+                        weightKg: progression.suggestion.suggestedWeightKg,
+                      });
+                    }
+                  }}
                   onRemove={() => confirmRemoveExercise(exercise.id, exercise.name)}
                   onTogglePbTracking={() => {
                     if (catalogExerciseId) void togglePbTracking(catalogExerciseId);
@@ -152,6 +168,8 @@ export function ActiveWorkoutScreen() {
                   pbTrackingError={catalogExerciseId ? pbTrackingErrors[catalogExerciseId] : undefined}
                   pbTrackingPending={Boolean(catalogExerciseId && pbTrackingPendingIds.has(catalogExerciseId))}
                   personalBestKg={catalogExerciseId ? personalBests.get(catalogExerciseId)?.weightKg : undefined}
+                  progression={progression}
+                  progressionCanApply={Boolean(nextIncompleteSet && progression?.suggestion)}
                 />
               );
             })}

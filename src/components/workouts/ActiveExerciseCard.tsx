@@ -2,18 +2,23 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { ActivityIndicator, Pressable, Switch, Text, View } from 'react-native';
 
 import { getLivePersonalBestSetId } from '../../lib/personalBest';
+import { formatShortPerformanceDate } from '../../lib/progressiveOverload';
+import type { ExerciseProgression } from '../../types/progressiveOverload';
 import type { WorkoutExercise } from '../../types/workout';
 import { ActiveSetRow } from './ActiveSetRow';
 
 type Props = {
   exercise: WorkoutExercise;
   onAddSet: () => void;
+  onApplyProgression: () => void;
   onRemove: () => void;
   onTogglePbTracking: () => void;
   pbTrackingEnabled: boolean;
   pbTrackingError?: string;
   pbTrackingPending: boolean;
   personalBestKg?: number;
+  progression?: ExerciseProgression;
+  progressionCanApply: boolean;
   onUpdateSet: (
     setId: string,
     values: { weightKg?: number; reps?: number; completed?: boolean },
@@ -23,6 +28,7 @@ type Props = {
 export function ActiveExerciseCard({
   exercise,
   onAddSet,
+  onApplyProgression,
   onRemove,
   onTogglePbTracking,
   onUpdateSet,
@@ -30,6 +36,8 @@ export function ActiveExerciseCard({
   pbTrackingError,
   pbTrackingPending,
   personalBestKg,
+  progression,
+  progressionCanApply,
 }: Props) {
   const livePersonalBestSetId = pbTrackingEnabled
     ? getLivePersonalBestSetId(exercise, personalBestKg)
@@ -76,6 +84,45 @@ export function ActiveExerciseCard({
           </View>
         </View>
       </View>
+
+      {progression ? (
+        <View className="mb-4 rounded-2xl bg-surface-container-low p-3">
+          <View className="flex-row items-center justify-between gap-3">
+            <Text className="text-xs font-extrabold uppercase tracking-widest text-secondary">Last</Text>
+            <Text className="text-xs font-bold text-on-surface-variant">
+              {formatShortPerformanceDate(progression.previousPerformance.completedAt)}
+            </Text>
+          </View>
+          <View className="mt-2 flex-row flex-wrap gap-2">
+            {progression.previousPerformance.sets.map((set, index) => (
+              <View className="rounded-xl bg-white px-2.5 py-1.5" key={`${index}-${set.weightKg}-${set.reps}`}>
+                <Text className="text-xs font-bold text-on-surface">
+                  {set.weightKg} kg × {set.reps}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          {progression.suggestion ? (
+            <Pressable
+              accessibilityLabel={`Apply suggested weight of ${progression.suggestion.suggestedWeightKg} kilograms`}
+              className={
+                'mt-3 h-11 flex-row items-center justify-center gap-2 rounded-xl ' +
+                (progressionCanApply
+                  ? 'bg-primary active:opacity-80'
+                  : 'bg-surface-container opacity-60')
+              }
+              disabled={!progressionCanApply}
+              onPress={onApplyProgression}
+            >
+              <Ionicons color={progressionCanApply ? '#ffffff' : '#6f7583'} name="trending-up-outline" size={18} />
+              <Text className={progressionCanApply ? 'text-sm font-extrabold text-on-primary' : 'text-sm font-extrabold text-on-surface-variant'}>
+                Try {progression.suggestion.suggestedWeightKg} kg
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
 
       {pbTrackingError ? (
         <Text className="mb-4 text-sm leading-5 text-[#ba1a1a]">{pbTrackingError}</Text>
