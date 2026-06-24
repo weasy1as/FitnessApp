@@ -1,22 +1,38 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import type { ComponentProps } from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import type { ComponentProps } from "react";
+import { Pressable, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-type IconName = ComponentProps<typeof Ionicons>['name'];
+type IconName = ComponentProps<typeof Ionicons>["name"];
 
 const iconNames: Record<string, { active: IconName; inactive: IconName }> = {
-  index: { active: 'home', inactive: 'home-outline' },
-  workout: { active: 'barbell', inactive: 'barbell-outline' },
-  progress: { active: 'trending-up', inactive: 'trending-up-outline' },
-  settings: { active: 'settings', inactive: 'settings-outline' },
+  index: { active: "home", inactive: "home-outline" },
+  workout: { active: "barbell", inactive: "barbell-outline" },
+  progress: { active: "trending-up", inactive: "trending-up-outline" },
+  settings: { active: "settings", inactive: "settings-outline" },
 };
 
-export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+export function BottomTabBar({
+  state,
+  descriptors,
+  navigation,
+}: BottomTabBarProps) {
   return (
-    <SafeAreaView className="border-t border-outline bg-surface" edges={['bottom']}>
-      <View className="h-16 flex-row items-stretch px-5">
+    <SafeAreaView
+      className="absolute bottom-0 left-0 right-0 bg-transparent px-4 pb-3 pt-2"
+      edges={["bottom"]}
+      pointerEvents="box-none"
+    >
+      <View
+        className="h-[72px] flex-row items-center rounded-[30px] border px-2 shadow-sm"
+        pointerEvents="auto"
+        style={{
+          backgroundColor: "rgba(255, 255, 255, 0.88)",
+          borderColor: "rgba(0, 88, 188, 0.18)",
+          boxShadow: "0 18px 36px rgba(19, 27, 46, 0.18)",
+        }}
+      >
         {state.routes.map((route, index) => {
           const active = state.index === index;
           const options = descriptors[route.key].options;
@@ -25,7 +41,7 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
 
           function navigate() {
             const event = navigation.emit({
-              type: 'tabPress',
+              type: "tabPress",
               target: route.key,
               canPreventDefault: true,
             });
@@ -41,19 +57,27 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
               accessibilityRole="button"
               accessibilityState={active ? { selected: true } : {}}
               className={
-                'flex-1 items-center justify-center gap-1 border-t-2 pt-1 active:opacity-70 ' +
-                (active ? 'border-primary' : 'border-transparent')
+                "h-14 flex-1 items-center justify-center gap-1 rounded-3xl active:opacity-75 " +
+                (active ? "bg-surface-container-low" : "bg-transparent")
               }
               key={route.key}
-              onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
+              onLongPress={() =>
+                navigation.emit({ type: "tabLongPress", target: route.key })
+              }
               onPress={navigate}
             >
               <Ionicons
-                color={active ? '#0058bc' : '#414755'}
+                color={active ? "#0058bc" : "#414755"}
                 name={active ? icons.active : icons.inactive}
-                size={23}
+                size={22}
               />
-              <Text className={'text-[11px] font-bold ' + (active ? 'text-primary' : 'text-on-surface-variant')}>
+              <Text
+                className={
+                  "text-[10px] font-extrabold " +
+                  (active ? "text-primary" : "text-on-surface-variant")
+                }
+                numberOfLines={1}
+              >
                 {label}
               </Text>
             </Pressable>

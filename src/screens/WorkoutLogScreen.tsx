@@ -29,7 +29,7 @@ export function WorkoutLogScreen() {
   return (
     <Screen edges={['top', 'right', 'left']}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View className="px-5 pb-10">
+        <View className="px-5 pb-32">
           <AppHeader />
 
           <View className="pb-7 pt-8">
