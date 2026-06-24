@@ -2,6 +2,9 @@
 
 ## General Rules
 
+- Before every implementation task, read this file and `project-context/PROJECT_CONTEXT.md` when it exists.
+- After meaningful implementation work, update `project-context/PROJECT_CONTEXT.md` with only important project context, decisions, and feature state.
+- Keep `project-context/PROJECT_CONTEXT.md` concise. It is local memory and must not be committed.
 - Always follow modern React Native and Expo best practices.
 - Write clean, readable, and maintainable code.
 - Keep files small and focused on a single responsibility.

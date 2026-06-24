@@ -4,6 +4,7 @@
 node_modules/
 
 .agents/
+project-context/
 # Expo
 .expo/
 dist/
@@ -46,3 +47,4 @@ yarn-error.*
 .env
 .env.*
 !.env.example
+project-context/features/
