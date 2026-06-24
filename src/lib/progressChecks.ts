@@ -18,11 +18,17 @@ export function runProgressCalculationSampleChecks() {
   const summaries = calculateExerciseProgressSummaries(sets);
   const benchHistory = buildSelectedExerciseWeightHistory(sets, sets, benchKey);
   const prs = findRecentPrs(sets.slice(1), sets);
+  const firstOnlyPrs = findRecentPrs([sets[0]], [sets[0]]);
+  const rowPrs = findRecentPrs([sets[3]], sets);
 
   assert(benchHistory.length === 2, 'selected exercise history uses top sets per workout');
+  assert(!benchHistory[0].isPr, 'first logged selected exercise point is not a PR');
+  assert(benchHistory[1].isPr, 'later heavier selected exercise point is a PR');
   assert(summaries.find((summary) => summary.exerciseKey === benchKey)?.increaseKg === 5, 'bench progress is +5 kg');
   assert(summaries.find((summary) => summary.exerciseKey === rowKey)?.increaseKg === 5, 'name fallback progress is +5 kg');
+  assert(firstOnlyPrs.length === 0, 'first and only logged weight is not a recent PR');
   assert(prs.some((pr) => pr.exerciseName === 'Bench Press' && pr.weightKg === 85), 'recent PRs compare against all-time history');
+  assert(rowPrs.some((pr) => pr.exerciseName === 'Cable Row' && pr.weightKg === 65), 'recent PRs support exercise name fallback');
 }
 
 function createSet(

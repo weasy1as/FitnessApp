@@ -9,7 +9,7 @@ Help users see how their strength is progressing over time by exercise.
 - Default timeframe: `8 weeks`
 - Secondary timeframe: `30 days`
 - Main metric: kg increase over time
-- PR rule: highest `weight_kg` ever logged for that exercise
+- PR rule: `weight_kg` must beat a previous logged best for that exercise; the first logged weight is only the baseline.
 - Data source: existing Supabase tables: `workouts`, `workout_exercises`, `workout_sets`, `exercises`
 
 ## User Experience
@@ -62,7 +62,7 @@ Dashboard-style page with exercise search, selected exercise chart, and PR highl
 - Data query returns only the current user's workouts.
 - Timeframe toggle changes the displayed set history.
 - Exercise selector updates the chart correctly.
-- PR detection compares against all-time exercise history, not only the selected timeframe.
+- PR detection compares against all-time exercise history, not only the selected timeframe, and excludes first-only logged weights.
 - Null `exercise_id` entries still appear using `exercise_name`.
 - Empty states appear without crashes.
 

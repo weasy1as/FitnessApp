@@ -3,9 +3,11 @@ import type {
   ExerciseProgressSummary,
   ProgressSetHistoryItem,
   RecentPr,
-} from '../types/progress';
+} from "../types/progress";
 
-export function getExerciseProgressKey(set: Pick<ProgressSetHistoryItem, 'exerciseId' | 'exerciseName'>) {
+export function getExerciseProgressKey(
+  set: Pick<ProgressSetHistoryItem, "exerciseId" | "exerciseName">,
+) {
   return set.exerciseId ?? normalizeExerciseName(set.exerciseName);
 }
 
@@ -14,17 +16,19 @@ export function buildSelectedExerciseWeightHistory(
   allTimeSets: ProgressSetHistoryItem[],
   exerciseKey: string,
 ): ExerciseProgressPoint[] {
-  const allTimePr = getAllTimePrWeightByExercise(allTimeSets).get(exerciseKey) ?? 0;
-  const topSets = getTopSetPerWorkout(timeframeSets).filter((set) => set.exerciseKey === exerciseKey);
+  const prKeys = getRecordBreakingSetKeys(allTimeSets);
+  const topSets = getTopSetPerWorkout(timeframeSets).filter(
+    (set) => set.exerciseKey === exerciseKey,
+  );
   return topSets.map((set) => ({
-    key: set.exerciseKey + '-' + set.startedAt,
+    key: set.exerciseKey + "-" + set.startedAt,
     exerciseKey: set.exerciseKey,
     exerciseName: set.exerciseName,
     primaryMuscle: set.primaryMuscle,
     startedAt: set.startedAt,
     weightKg: set.weightKg,
     reps: set.reps,
-    isPr: set.weightKg >= allTimePr && allTimePr > 0,
+    isPr: prKeys.has(createSetIdentity(set)),
   }));
 }
 
@@ -49,40 +53,41 @@ export function calculateExerciseProgressSummaries(
         latestSeenAt: latest.startedAt,
       };
     })
-    .sort((a, b) => b.increaseKg - a.increaseKg || a.exerciseName.localeCompare(b.exerciseName));
+    .sort(
+      (a, b) =>
+        b.increaseKg - a.increaseKg ||
+        a.exerciseName.localeCompare(b.exerciseName),
+    );
 }
 
 export function findRecentPrs(
   timeframeSets: ProgressSetHistoryItem[],
   allTimeSets: ProgressSetHistoryItem[],
 ): RecentPr[] {
-  const previousBestByExercise = new Map<string, number>();
+  const prKeys = getRecordBreakingSetKeys(allTimeSets);
   const timeframeKeys = new Set(timeframeSets.map(createSetIdentity));
-  const prs: RecentPr[] = [];
-
-  [...allTimeSets].sort(compareRawSetByStartedAt).forEach((set) => {
-    const exerciseKey = getExerciseProgressKey(set);
-    const previousBest = previousBestByExercise.get(exerciseKey) ?? -1;
-    if (set.weightKg > previousBest) {
-      previousBestByExercise.set(exerciseKey, set.weightKg);
-      if (timeframeKeys.has(createSetIdentity(set))) {
-        prs.push({
-          exerciseKey,
-          exerciseName: set.exerciseName,
-          primaryMuscle: set.primaryMuscle,
-          startedAt: set.startedAt,
-          weightKg: set.weightKg,
-          reps: set.reps,
-        });
-      }
-    }
-  });
-
-  return prs.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+  return [...allTimeSets]
+    .filter((set) => {
+      const setKey = createSetIdentity(set);
+      return timeframeKeys.has(setKey) && prKeys.has(setKey);
+    })
+    .map((set) => ({
+      exerciseKey: getExerciseProgressKey(set),
+      exerciseName: set.exerciseName,
+      primaryMuscle: set.primaryMuscle,
+      startedAt: set.startedAt,
+      weightKg: set.weightKg,
+      reps: set.reps,
+    }))
+    .sort(
+      (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
+    );
 }
 
 export function getExerciseOptions(summaries: ExerciseProgressSummary[]) {
-  return [...summaries].sort((a, b) => a.exerciseName.localeCompare(b.exerciseName));
+  return [...summaries].sort((a, b) =>
+    a.exerciseName.localeCompare(b.exerciseName),
+  );
 }
 
 type TopWorkoutSet = ProgressSetHistoryItem & { exerciseKey: string };
@@ -91,9 +96,13 @@ function getTopSetPerWorkout(sets: ProgressSetHistoryItem[]): TopWorkoutSet[] {
   const topSets = new Map<string, TopWorkoutSet>();
   sets.forEach((set) => {
     const exerciseKey = getExerciseProgressKey(set);
-    const key = exerciseKey + '-' + set.startedAt;
+    const key = exerciseKey + "-" + set.startedAt;
     const current = topSets.get(key);
-    if (!current || set.weightKg > current.weightKg || (set.weightKg === current.weightKg && set.reps > current.reps)) {
+    if (
+      !current ||
+      set.weightKg > current.weightKg ||
+      (set.weightKg === current.weightKg && set.reps > current.reps)
+    ) {
       topSets.set(key, { ...set, exerciseKey });
     }
   });
@@ -103,33 +112,59 @@ function getTopSetPerWorkout(sets: ProgressSetHistoryItem[]): TopWorkoutSet[] {
 function groupTopSetsByExercise(sets: TopWorkoutSet[]) {
   const grouped = new Map<string, TopWorkoutSet[]>();
   sets.forEach((set) => {
-    grouped.set(set.exerciseKey, [...(grouped.get(set.exerciseKey) ?? []), set]);
+    grouped.set(set.exerciseKey, [
+      ...(grouped.get(set.exerciseKey) ?? []),
+      set,
+    ]);
   });
   return grouped;
 }
 
-function getAllTimePrWeightByExercise(sets: ProgressSetHistoryItem[]) {
-  const prs = new Map<string, number>();
-  sets.forEach((set) => {
+function getRecordBreakingSetKeys(sets: ProgressSetHistoryItem[]) {
+  const previousBestByExercise = new Map<string, number>();
+  const prKeys = new Set<string>();
+
+  [...sets].sort(compareRawSetByStartedAt).forEach((set) => {
     const exerciseKey = getExerciseProgressKey(set);
-    const current = prs.get(exerciseKey) ?? 0;
-    if (set.weightKg > current) prs.set(exerciseKey, set.weightKg);
+    const previousBest = previousBestByExercise.get(exerciseKey);
+    if (previousBest === undefined) {
+      previousBestByExercise.set(exerciseKey, set.weightKg);
+      return;
+    }
+
+    if (set.weightKg > previousBest) {
+      previousBestByExercise.set(exerciseKey, set.weightKg);
+      prKeys.add(createSetIdentity(set));
+    }
   });
-  return prs;
+
+  return prKeys;
 }
 
 function normalizeExerciseName(name: string) {
-  return 'name:' + name.trim().toLowerCase();
+  return "name:" + name.trim().toLowerCase();
 }
 
 function createSetIdentity(set: ProgressSetHistoryItem) {
-  return [getExerciseProgressKey(set), set.startedAt, set.setPosition, set.weightKg, set.reps].join('|');
+  return [
+    getExerciseProgressKey(set),
+    set.startedAt,
+    set.setPosition,
+    set.weightKg,
+    set.reps,
+  ].join("|");
 }
 
-function compareByStartedAt(a: { startedAt: string }, b: { startedAt: string }) {
+function compareByStartedAt(
+  a: { startedAt: string },
+  b: { startedAt: string },
+) {
   return new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime();
 }
 
-function compareRawSetByStartedAt(a: ProgressSetHistoryItem, b: ProgressSetHistoryItem) {
+function compareRawSetByStartedAt(
+  a: ProgressSetHistoryItem,
+  b: ProgressSetHistoryItem,
+) {
   return compareByStartedAt(a, b) || a.setPosition - b.setPosition;
 }
