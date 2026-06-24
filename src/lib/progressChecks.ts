@@ -3,7 +3,6 @@ import {
   calculateExerciseProgressSummaries,
   findRecentPrs,
   getExerciseProgressKey,
-  summarizeMuscleGroups,
 } from './progress';
 import type { ProgressSetHistoryItem } from '../types/progress';
 
@@ -19,13 +18,11 @@ export function runProgressCalculationSampleChecks() {
   const summaries = calculateExerciseProgressSummaries(sets);
   const benchHistory = buildSelectedExerciseWeightHistory(sets, sets, benchKey);
   const prs = findRecentPrs(sets.slice(1), sets);
-  const muscles = summarizeMuscleGroups(summaries);
 
   assert(benchHistory.length === 2, 'selected exercise history uses top sets per workout');
   assert(summaries.find((summary) => summary.exerciseKey === benchKey)?.increaseKg === 5, 'bench progress is +5 kg');
   assert(summaries.find((summary) => summary.exerciseKey === rowKey)?.increaseKg === 5, 'name fallback progress is +5 kg');
   assert(prs.some((pr) => pr.exerciseName === 'Bench Press' && pr.weightKg === 85), 'recent PRs compare against all-time history');
-  assert(muscles.some((muscle) => muscle.muscle === 'Chest' && muscle.improvingExercises === 1), 'muscle summaries count improving exercises');
 }
 
 function createSet(

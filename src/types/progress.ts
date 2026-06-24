@@ -40,10 +40,3 @@ export type RecentPr = {
   weightKg: number;
   reps: number;
 };
-
-export type MuscleGroupSummary = {
-  muscle: string;
-  improvingExercises: number;
-  totalIncreaseKg: number;
-  exercises: ExerciseProgressSummary[];
-};

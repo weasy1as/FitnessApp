@@ -2,7 +2,7 @@
 
 ## Goal
 
-Help users see how their strength is progressing over time by exercise and muscle group.
+Help users see how their strength is progressing over time by exercise.
 
 ## Defaults
 
@@ -14,7 +14,7 @@ Help users see how their strength is progressing over time by exercise and muscl
 
 ## User Experience
 
-Dashboard-style page with exercise search, selected exercise chart, PR highlights, and muscle-group overview.
+Dashboard-style page with exercise search, selected exercise chart, and PR highlights.
 
 ## Implementation Checklist
 
@@ -32,7 +32,6 @@ Dashboard-style page with exercise search, selected exercise chart, PR highlight
   - [x] Build selected exercise weight history.
   - [x] Build earliest vs latest top weight in timeframe.
   - [x] Build all-time highest-weight PR detection.
-  - [x] Build muscle-group summaries based on exercise progress.
   - [x] Use `exercise_name` as fallback when `exercise_id` is missing.
   - [x] Add tests or sample checks for each calculation.
 - [x] 4. Progress Page UI Shell
@@ -51,10 +50,7 @@ Dashboard-style page with exercise search, selected exercise chart, PR highlight
   - [x] Show exercise name, new kg record, reps, and workout date.
   - [x] Hide or show a friendly empty state when no PRs exist in the selected timeframe.
 - [x] 7. Muscle Group Overview
-  - [x] Group exercises by `primary_muscle`.
-  - [x] Show muscles with improving exercises in the selected timeframe.
-  - [x] Let users click a muscle group to filter or browse related exercises.
-  - [x] Avoid creating a fake overall "muscle strength score"; summarize exercise-level progress instead.
+  - [x] Removed from scope by request.
 - [ ] 8. Final Verification
   - [x] Test with users who have workouts, no workouts, no recent sets, and no PRs.
   - [x] Verify 8-week and 30-day views.
@@ -67,7 +63,6 @@ Dashboard-style page with exercise search, selected exercise chart, PR highlight
 - Timeframe toggle changes the displayed set history.
 - Exercise selector updates the chart correctly.
 - PR detection compares against all-time exercise history, not only the selected timeframe.
-- Muscle groups use `exercises.primary_muscle`.
 - Null `exercise_id` entries still appear using `exercise_name`.
 - Empty states appear without crashes.
 

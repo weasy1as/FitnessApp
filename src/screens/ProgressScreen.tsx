@@ -9,13 +9,11 @@ import {
   calculateExerciseProgressSummaries,
   findRecentPrs,
   getExerciseOptions,
-  summarizeMuscleGroups,
 } from '../lib/progress';
 import { useProgressHistory } from '../progress/useProgressHistory';
 import type {
   ExerciseProgressPoint,
   ExerciseProgressSummary,
-  MuscleGroupSummary,
   ProgressTimeframe,
   RecentPr,
 } from '../types/progress';
@@ -29,13 +27,11 @@ export function ProgressScreen() {
   const [timeframe, setTimeframe] = useState<ProgressTimeframe>('8w');
   const [query, setQuery] = useState('');
   const [selectedExerciseKey, setSelectedExerciseKey] = useState<string | null>(null);
-  const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null);
   const { allTimeSets, error, loading, retry, timeframeSets } = useProgressHistory(timeframe);
 
   const summaries = useMemo(() => calculateExerciseProgressSummaries(timeframeSets), [timeframeSets]);
   const exerciseOptions = useMemo(() => getExerciseOptions(summaries), [summaries]);
   const recentPrs = useMemo(() => findRecentPrs(timeframeSets, allTimeSets).slice(0, 4), [allTimeSets, timeframeSets]);
-  const muscleGroups = useMemo(() => summarizeMuscleGroups(summaries), [summaries]);
   const selectedExercise = exerciseOptions.find((exercise) => exercise.exerciseKey === selectedExerciseKey) ?? null;
   const chartPoints = useMemo(
     () =>
@@ -46,8 +42,7 @@ export function ProgressScreen() {
   );
   const filteredExercises = exerciseOptions.filter((exercise) => {
     const matchesQuery = exercise.exerciseName.toLowerCase().includes(query.trim().toLowerCase());
-    const matchesMuscle = !selectedMuscle || (exercise.primaryMuscle ?? 'Unassigned') === selectedMuscle;
-    return matchesQuery && matchesMuscle;
+    return matchesQuery;
   });
 
   useEffect(() => {
@@ -69,7 +64,7 @@ export function ProgressScreen() {
           <View className="pb-6 pt-8">
             <Text className="text-[32px] font-extrabold tracking-tight text-on-surface">Progress</Text>
             <Text className="mt-2 text-base leading-6 text-on-surface-variant">
-              Track kg progression by exercise, PRs, and muscle groups.
+              Track kg progression by exercise and recent PRs.
             </Text>
           </View>
 
@@ -99,24 +94,14 @@ export function ProgressScreen() {
             <View className="mt-5 gap-5">
               <ExerciseSelector
                 exercises={filteredExercises}
-                onClearMuscle={() => setSelectedMuscle(null)}
                 onQueryChange={setQuery}
                 onSelect={setSelectedExerciseKey}
                 query={query}
                 selectedExerciseKey={selectedExerciseKey}
-                selectedMuscle={selectedMuscle}
               />
 
               <ProgressChart points={chartPoints} selectedExercise={selectedExercise} />
               <PrHighlights prs={recentPrs} />
-              <MuscleOverview
-                groups={muscleGroups}
-                onSelect={(muscle) => {
-                  setSelectedMuscle(muscle);
-                  setQuery('');
-                }}
-                selectedMuscle={selectedMuscle}
-              />
             </View>
           )}
         </View>
@@ -145,20 +130,16 @@ function TimeframeToggle({ timeframe, onChange }: { timeframe: ProgressTimeframe
 
 function ExerciseSelector({
   exercises,
-  onClearMuscle,
   onQueryChange,
   onSelect,
   query,
   selectedExerciseKey,
-  selectedMuscle,
 }: {
   exercises: ExerciseProgressSummary[];
-  onClearMuscle: () => void;
   onQueryChange: (query: string) => void;
   onSelect: (exerciseKey: string) => void;
   query: string;
   selectedExerciseKey: string | null;
-  selectedMuscle: string | null;
 }) {
   return (
     <View className="rounded-3xl border border-outline bg-white p-4">
@@ -172,13 +153,6 @@ function ExerciseSelector({
           value={query}
         />
       </View>
-
-      {selectedMuscle ? (
-        <Pressable className="mt-3 flex-row items-center gap-2 self-start rounded-2xl bg-[#d9f8ff] px-3 py-2" onPress={onClearMuscle}>
-          <Text className="text-xs font-extrabold text-on-accent">{selectedMuscle}</Text>
-          <Ionicons color="#005266" name="close" size={14} />
-        </Pressable>
-      ) : null}
 
       <View className="mt-4 gap-2">
         {exercises.length ? (
@@ -274,42 +248,6 @@ function PrHighlights({ prs }: { prs: RecentPr[] }) {
           No new records in this timeframe. The next one will stand out here.
         </Text>
       )}
-    </View>
-  );
-}
-
-function MuscleOverview({ groups, onSelect, selectedMuscle }: { groups: MuscleGroupSummary[]; onSelect: (muscle: string) => void; selectedMuscle: string | null }) {
-  return (
-    <View className="rounded-3xl border border-outline bg-white p-5">
-      <Text className="text-xs font-extrabold uppercase tracking-widest text-secondary">Muscle groups</Text>
-      <View className="mt-3 gap-3">
-        {groups.length ? (
-          groups.map((group) => (
-            <Pressable
-              className={'rounded-2xl border p-4 ' + (selectedMuscle === group.muscle ? 'border-primary bg-surface-container-low' : 'border-surface-container bg-white')}
-              key={group.muscle}
-              onPress={() => onSelect(group.muscle)}
-            >
-              <View className="flex-row items-center justify-between gap-3">
-                <View className="flex-1">
-                  <Text className="text-lg font-extrabold text-on-surface">{group.muscle}</Text>
-                  <Text className="mt-1 text-sm text-on-surface-variant">
-                    {group.improvingExercises} improving {group.improvingExercises === 1 ? 'exercise' : 'exercises'}
-                  </Text>
-                </View>
-                <Text className="font-extrabold text-secondary">+{formatKg(group.totalIncreaseKg)}</Text>
-              </View>
-              <Text className="mt-3 text-xs leading-5 text-on-surface-variant">
-                {group.exercises.slice(0, 2).map((exercise) => `${exercise.exerciseName} +${formatKg(exercise.increaseKg)}`).join('  ')}
-              </Text>
-            </Pressable>
-          ))
-        ) : (
-          <Text className="rounded-2xl bg-surface-container-low p-4 text-center text-sm text-on-surface-variant">
-            Muscle groups will appear once at least one exercise improves in this timeframe.
-          </Text>
-        )}
-      </View>
     </View>
   );
 }

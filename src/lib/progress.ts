@@ -1,7 +1,6 @@
 import type {
   ExerciseProgressPoint,
   ExerciseProgressSummary,
-  MuscleGroupSummary,
   ProgressSetHistoryItem,
   RecentPr,
 } from '../types/progress';
@@ -80,27 +79,6 @@ export function findRecentPrs(
   });
 
   return prs.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
-}
-
-export function summarizeMuscleGroups(summaries: ExerciseProgressSummary[]): MuscleGroupSummary[] {
-  const grouped = new Map<string, ExerciseProgressSummary[]>();
-  summaries.forEach((summary) => {
-    const muscle = summary.primaryMuscle ?? 'Unassigned';
-    grouped.set(muscle, [...(grouped.get(muscle) ?? []), summary]);
-  });
-
-  return [...grouped.entries()]
-    .map(([muscle, exercises]) => {
-      const improvingExercises = exercises.filter((exercise) => exercise.increaseKg > 0);
-      return {
-        muscle,
-        improvingExercises: improvingExercises.length,
-        totalIncreaseKg: improvingExercises.reduce((total, exercise) => total + exercise.increaseKg, 0),
-        exercises: improvingExercises.sort((a, b) => b.increaseKg - a.increaseKg),
-      };
-    })
-    .filter((summary) => summary.improvingExercises > 0)
-    .sort((a, b) => b.improvingExercises - a.improvingExercises || b.totalIncreaseKg - a.totalIncreaseKg);
 }
 
 export function getExerciseOptions(summaries: ExerciseProgressSummary[]) {
