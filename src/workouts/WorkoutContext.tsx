@@ -1,11 +1,13 @@
 import { createContext, type PropsWithChildren, useContext, useEffect, useMemo, useState } from 'react';
 
 import { useAuth } from '../auth/AuthContext';
+import { useFavoriteWorkouts } from '../favoriteWorkouts/useFavoriteWorkouts';
 import {
   countCompletedSets,
   createExercise,
   createSet,
   createWorkoutDraft,
+  createWorkoutDraftFromCompleted,
   filterCompletedExercises,
 } from '../lib/workout';
 import type { ExerciseCatalogItem } from '../types/exercise';
@@ -26,11 +28,16 @@ type WorkoutContextValue = {
   booting: boolean;
   historyRefreshing: boolean;
   historyError: string | null;
+  favoriteWorkoutIds: ReadonlySet<string>;
+  favoriteWorkoutErrors: Record<string, string>;
+  favoriteWorkoutPendingIds: ReadonlySet<string>;
   trackedPbExerciseIds: ReadonlySet<string>;
   pbTrackingErrors: Record<string, string>;
   pbTrackingPendingIds: ReadonlySet<string>;
+  toggleFavoriteWorkout: (workoutId: string) => Promise<void>;
   togglePbTracking: (exerciseId: string) => Promise<void>;
   startNewWorkout: () => Promise<ActiveWorkout>;
+  startWorkoutFromCompleted: (workoutId: string) => Promise<ActiveWorkout | null>;
   cancelWorkout: () => Promise<void>;
   finishWorkout: () => Promise<CompletedWorkout | null>;
   addExercises: (exercises: ExerciseCatalogItem[]) => void;
@@ -47,6 +54,7 @@ export function WorkoutProvider({ children }: PropsWithChildren) {
   const userId = session?.user.id;
   const history = useWorkoutHistory(userId);
   const pbTracking = usePbTracking(userId);
+  const favoriteWorkouts = useFavoriteWorkouts(userId);
   const [activeWorkout, setActiveWorkout] = useState<ActiveWorkout | null>(null);
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const [activeLoading, setActiveLoading] = useState(false);
@@ -101,11 +109,26 @@ export function WorkoutProvider({ children }: PropsWithChildren) {
 
   const booting =
     Boolean(userId) &&
-    (activeLoading || loadedUserId !== userId || history.loading || pbTracking.booting);
+    (activeLoading ||
+      loadedUserId !== userId ||
+      history.loading ||
+      pbTracking.booting ||
+      favoriteWorkouts.booting);
 
   async function startNewWorkout() {
     if (!userId) throw new Error('You must be signed in to start a workout.');
     const workout = createWorkoutDraft();
+    setActiveWorkout(workout);
+    await saveActiveWorkout(userId, workout);
+    return workout;
+  }
+
+  async function startWorkoutFromCompleted(workoutId: string) {
+    if (!userId) throw new Error('You must be signed in to start a workout.');
+    const completedWorkout = completedWorkouts.find((workout) => workout.id === workoutId);
+    if (!completedWorkout) return null;
+
+    const workout = createWorkoutDraftFromCompleted(completedWorkout);
     setActiveWorkout(workout);
     await saveActiveWorkout(userId, workout);
     return workout;
@@ -218,11 +241,16 @@ export function WorkoutProvider({ children }: PropsWithChildren) {
         booting,
         historyRefreshing: history.refreshing,
         historyError: history.cloudError,
+        favoriteWorkoutIds: favoriteWorkouts.favoriteWorkoutIds,
+        favoriteWorkoutErrors: favoriteWorkouts.errors,
+        favoriteWorkoutPendingIds: favoriteWorkouts.pendingWorkoutIds,
         trackedPbExerciseIds: pbTracking.trackedExerciseIds,
         pbTrackingErrors: pbTracking.errors,
         pbTrackingPendingIds: pbTracking.pendingExerciseIds,
+        toggleFavoriteWorkout: favoriteWorkouts.toggle,
         togglePbTracking: pbTracking.toggle,
         startNewWorkout,
+        startWorkoutFromCompleted,
         cancelWorkout,
         finishWorkout,
         addExercises,

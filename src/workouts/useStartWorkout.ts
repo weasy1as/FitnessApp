@@ -5,11 +5,16 @@ import { useWorkouts } from './WorkoutContext';
 
 export function useStartWorkout() {
   const router = useRouter();
-  const { activeWorkout, cancelWorkout, startNewWorkout } = useWorkouts();
+  const { activeWorkout, cancelWorkout, startNewWorkout, startWorkoutFromCompleted } = useWorkouts();
 
   async function openNewWorkout() {
     await startNewWorkout();
     router.push('/workout/active');
+  }
+
+  async function openWorkoutFromCompleted(workoutId: string) {
+    const workout = await startWorkoutFromCompleted(workoutId);
+    if (workout) router.push('/workout/active');
   }
 
   function startWorkout() {
@@ -54,8 +59,38 @@ export function useStartWorkout() {
     );
   }
 
+  function startFavoriteWorkout(workoutId: string) {
+    if (!activeWorkout) {
+      void openWorkoutFromCompleted(workoutId);
+      return;
+    }
+
+    Alert.alert(
+      'Workout in progress',
+      'Discard your current workout and start this favorite instead?',
+      [
+        { text: 'Keep workout', style: 'cancel' },
+        {
+          text: 'Discard and start favorite',
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              await cancelWorkout();
+              await openWorkoutFromCompleted(workoutId);
+            })();
+          },
+        },
+        {
+          text: 'Resume current',
+          onPress: () => router.push('/workout/active'),
+        },
+      ],
+    );
+  }
+
   return {
     activeWorkout,
+    startFavoriteWorkout,
     startWorkout,
   };
 }

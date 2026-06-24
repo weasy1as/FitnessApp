@@ -11,12 +11,24 @@ import type { CompletedWorkout } from '../../types/workout';
 import type { WorkoutSyncStatus } from '../../types/workoutSync';
 
 type Props = {
+  favoriteError?: string;
+  isFavorite: boolean;
+  favoritePending: boolean;
   workout: CompletedWorkout;
   syncStatus?: WorkoutSyncStatus;
+  onToggleFavorite: () => void;
   onRetrySync: () => void;
 };
 
-export function WorkoutLogCard({ workout, syncStatus, onRetrySync }: Props) {
+export function WorkoutLogCard({
+  favoriteError,
+  favoritePending,
+  isFavorite,
+  workout,
+  syncStatus,
+  onRetrySync,
+  onToggleFavorite,
+}: Props) {
   return (
     <View className="rounded-3xl border border-outline bg-white p-5 shadow-sm">
       <View className="mb-4 flex-row items-start justify-between">
@@ -26,10 +38,32 @@ export function WorkoutLogCard({ workout, syncStatus, onRetrySync }: Props) {
             {formatWorkoutDate(workout.completedAt)}
           </Text>
         </View>
-        <View className="rounded-xl bg-surface-container px-3 py-2">
-          <Text className="text-xs font-extrabold text-secondary">
-            {formatWorkoutDuration(workout.durationSeconds)}
-          </Text>
+        <View className="items-end gap-2">
+          <Pressable
+            accessibilityLabel={isFavorite ? 'Remove favorite workout' : 'Favorite workout'}
+            accessibilityRole="button"
+            className={
+              'h-10 w-10 items-center justify-center rounded-2xl ' +
+              (isFavorite ? 'bg-[#fff2cc]' : 'bg-surface-container')
+            }
+            disabled={favoritePending}
+            onPress={onToggleFavorite}
+          >
+            {favoritePending ? (
+              <ActivityIndicator color="#00677f" size="small" />
+            ) : (
+              <Ionicons
+                color={isFavorite ? '#b26a00' : '#414755'}
+                name={isFavorite ? 'star' : 'star-outline'}
+                size={21}
+              />
+            )}
+          </Pressable>
+          <View className="rounded-xl bg-surface-container px-3 py-2">
+            <Text className="text-xs font-extrabold text-secondary">
+              {formatWorkoutDuration(workout.durationSeconds)}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -50,6 +84,15 @@ export function WorkoutLogCard({ workout, syncStatus, onRetrySync }: Props) {
 
       {syncStatus && syncStatus !== 'synced' ? (
         <SyncStatus status={syncStatus} onRetry={onRetrySync} />
+      ) : null}
+
+      {favoriteError ? (
+        <View className="mb-4 flex-row items-center rounded-xl bg-[#fff1f0] px-3 py-2">
+          <Ionicons color="#ba1a1a" name="alert-circle-outline" size={17} />
+          <Text className="ml-2 flex-1 text-xs font-bold text-[#8c1d18]">
+            Favorite could not be saved.
+          </Text>
+        </View>
       ) : null}
 
       {workout.exercises.slice(0, 3).map((exercise, index) => {

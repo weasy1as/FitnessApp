@@ -3,20 +3,28 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-nati
 
 import { AppHeader } from '../components/AppHeader';
 import { Screen } from '../components/Screen';
+import { FavoriteWorkoutCard } from '../components/workouts/FavoriteWorkoutCard';
 import { WorkoutLogCard } from '../components/workouts/WorkoutLogCard';
 import { useStartWorkout } from '../workouts/useStartWorkout';
 import { useWorkouts } from '../workouts/WorkoutContext';
 
 export function WorkoutLogScreen() {
-  const { activeWorkout, startWorkout } = useStartWorkout();
+  const { activeWorkout, startFavoriteWorkout, startWorkout } = useStartWorkout();
   const {
     booting,
     completedWorkouts,
+    favoriteWorkoutErrors,
+    favoriteWorkoutIds,
+    favoriteWorkoutPendingIds,
     historyError,
     historyRefreshing,
     retryWorkoutSync,
+    toggleFavoriteWorkout,
     workoutSyncStatus,
   } = useWorkouts();
+  const favoriteWorkouts = completedWorkouts.filter((workout) =>
+    favoriteWorkoutIds.has(workout.id),
+  );
 
   return (
     <Screen edges={['top', 'right', 'left']}>
@@ -53,8 +61,6 @@ export function WorkoutLogScreen() {
             <Ionicons color="#ffffff" name={activeWorkout ? 'refresh' : 'play'} size={22} />
           </Pressable>
 
-          <Text className="mb-3 px-1 text-xs font-extrabold uppercase tracking-widest text-secondary">Previous workouts</Text>
-
           {historyError ? (
             <View className="mb-4 flex-row items-center rounded-2xl border border-outline bg-surface-container-low p-4">
               <Ionicons color="#00677f" name="cloud-offline-outline" size={21} />
@@ -75,15 +81,41 @@ export function WorkoutLogScreen() {
             </View>
           ) : (
             <View className="gap-4">
+              {favoriteWorkouts.length ? (
+                <View className="gap-3 pb-3">
+                  <Text className="px-1 text-xs font-extrabold uppercase tracking-widest text-secondary">
+                    Favorite workouts
+                  </Text>
+                  {favoriteWorkouts.map((workout) => (
+                    <FavoriteWorkoutCard
+                      favoritePending={favoriteWorkoutPendingIds.has(workout.id)}
+                      key={'favorite-' + workout.id}
+                      onStart={() => startFavoriteWorkout(workout.id)}
+                      onToggleFavorite={() => void toggleFavoriteWorkout(workout.id)}
+                      workout={workout}
+                    />
+                  ))}
+                </View>
+              ) : null}
+
               {completedWorkouts.length ? (
-                completedWorkouts.map((workout) => (
-                  <WorkoutLogCard
-                    key={workout.id}
-                    onRetrySync={() => void retryWorkoutSync(workout.id)}
-                    syncStatus={workoutSyncStatus[workout.id]}
-                    workout={workout}
-                  />
-                ))
+                <>
+                  <Text className="px-1 text-xs font-extrabold uppercase tracking-widest text-secondary">
+                    Previous workouts
+                  </Text>
+                  {completedWorkouts.map((workout) => (
+                    <WorkoutLogCard
+                      favoriteError={favoriteWorkoutErrors[workout.id]}
+                      favoritePending={favoriteWorkoutPendingIds.has(workout.id)}
+                      isFavorite={favoriteWorkoutIds.has(workout.id)}
+                      key={workout.id}
+                      onRetrySync={() => void retryWorkoutSync(workout.id)}
+                      onToggleFavorite={() => void toggleFavoriteWorkout(workout.id)}
+                      syncStatus={workoutSyncStatus[workout.id]}
+                      workout={workout}
+                    />
+                  ))}
+                </>
               ) : (
                 <View className="items-center rounded-3xl border border-outline bg-white px-6 py-10">
                   <Ionicons color="#00677f" name="calendar-outline" size={30} />

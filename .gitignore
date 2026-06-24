@@ -10,7 +10,7 @@ dist/
 web-build/
 expo-env.d.ts
 .agents/
-supabase/
+
 
 # Native
 .kotlin/

@@ -1,5 +1,5 @@
 import type { ExerciseCatalogItem } from '../types/exercise';
-import type { ActiveWorkout, WorkoutExercise, WorkoutSet } from '../types/workout';
+import type { ActiveWorkout, CompletedWorkout, WorkoutExercise, WorkoutSet } from '../types/workout';
 
 export function createId(prefix: string): string {
   return prefix + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
@@ -33,6 +33,24 @@ export function createWorkoutDraft(): ActiveWorkout {
     name: 'Workout Session',
     startedAt: new Date().toISOString(),
     exercises: [],
+  };
+}
+
+export function createWorkoutDraftFromCompleted(workout: CompletedWorkout): ActiveWorkout {
+  return {
+    id: createId('workout'),
+    status: 'active',
+    name: workout.name,
+    startedAt: new Date().toISOString(),
+    exercises: workout.exercises.map((exercise) => ({
+      id: createId('exercise'),
+      catalogExerciseId: exercise.catalogExerciseId,
+      name: exercise.name,
+      primaryMuscle: exercise.primaryMuscle,
+      equipment: exercise.equipment,
+      imageUrl: exercise.imageUrl,
+      sets: [createSet()],
+    })),
   };
 }
 
