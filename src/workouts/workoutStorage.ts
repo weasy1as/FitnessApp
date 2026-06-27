@@ -28,6 +28,14 @@ export async function clearActiveWorkout(userId: string): Promise<void> {
   await AsyncStorage.removeItem(activeKey(userId));
 }
 
+export async function clearUserWorkoutStorage(userId: string): Promise<void> {
+  await AsyncStorage.multiRemove([
+    activeKey(userId),
+    historyKey(userId),
+    versionedHistoryKey(userId),
+  ]);
+}
+
 export async function loadWorkoutRecords(userId: string): Promise<StoredWorkoutRecord[]> {
   const versionedValue = await AsyncStorage.getItem(versionedHistoryKey(userId));
   if (versionedValue) {
